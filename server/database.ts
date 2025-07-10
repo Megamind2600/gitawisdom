@@ -4,12 +4,27 @@ import { chapters, shlokas, conversations } from "@shared/schema";
 import type { Chapter, Shloka, Conversation, InsertConversation } from "@shared/schema";
 import { eq, ilike, or } from "drizzle-orm";
 
-// Handle URL encoding for special characters
-function encodeConnectionString(url: string): string {
-  return url.replace(/\*/g, '%2A').replace(/%U/g, '%25U');
+// Handle URL encoding for special characters in Supabase connection string
+function fixSupabaseConnectionString(url: string): string {
+  // Common issues with Supabase connection strings
+  if (!url) return "";
+  
+  // Fix common encoding issues
+  let fixedUrl = url
+    .replace(/\*(?!%)/g, '%2A')  // Only encode * if not already encoded
+    .replace(/%U(?![0-9A-Fa-f]{2})/g, '%25U')  // Fix %U sequences
+    .replace(/aws-0-us-west-1\.pooler\.supabase\.com/g, 'aws-0-us-west-1.pooler.supabase.com');
+  
+  // Ensure proper protocol
+  if (!fixedUrl.startsWith('postgresql://') && !fixedUrl.startsWith('postgres://')) {
+    fixedUrl = 'postgresql://' + fixedUrl;
+  }
+  
+  console.log('Database URL (first 50 chars):', fixedUrl.substring(0, 50) + '...');
+  return fixedUrl;
 }
 
-const sql = neon(encodeConnectionString(process.env.DATABASE_URL || ""));
+const sql = neon(fixSupabaseConnectionString(process.env.DATABASE_URL || ""));
 const db = drizzle(sql);
 
 export class DatabaseStorage {

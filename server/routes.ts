@@ -1,12 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, initializeStorage } from "./storage";
 import { z } from "zod";
 import { GoogleGenAI } from "@google/genai";
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize storage
+  await initializeStorage();
+  
   // Create or get conversation
   app.post("/api/conversations", async (req, res) => {
     try {
@@ -20,7 +23,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           messages: [],
           currentStep: 0,
           progressPercentage: 0,
-          selectedShlokaId: null,
+          selectedShlokId: null,
           createdAt: new Date().toISOString()
         });
       }
@@ -133,11 +136,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If AI suggests showing shloka, find relevant one
       let relevantShloka = null;
       if (aiResponse.shouldShowShloka && aiResponse.shlokaQuery) {
-        const shlokas = await storage.searchShlokas(aiResponse.shlokaQuery);
-        if (shlokas.length > 0) {
-          relevantShloka = shlokas[0];
+        const shloks = await storage.searchShloks(aiResponse.shlokaQuery);
+        if (shloks.length > 0) {
+          relevantShloka = shloks[0];
           await storage.updateConversation(sessionId, {
-            selectedShlokaId: relevantShloka.id
+            selectedShlokId: relevantShloka.id
           });
         }
       }
@@ -162,16 +165,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/shlokas/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const shloka = await storage.getShloka(id);
+      const shlok = await storage.getShlok(id);
       
-      if (!shloka) {
-        return res.status(404).json({ error: "Shloka not found" });
+      if (!shlok) {
+        return res.status(404).json({ error: "Shlok not found" });
       }
       
-      const chapter = await storage.getChapter(shloka.chapterId);
+      // For existing shloks table, we use chapterNumber instead of chapterId
+      const chapter = await storage.getChapter(shlok.chapterNumber || 1);
       
       res.json({
-        shloka,
+        shloka: shlok, // Keep API response consistent for frontend
         chapter
       });
     } catch (error) {

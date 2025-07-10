@@ -123,12 +123,8 @@ export class MemStorage implements IStorage {
   async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
     const conversation: Conversation = {
       id: this.currentConversationId++,
-      sessionId: insertConversation.sessionId,
-      messages: (insertConversation.messages as Array<{role: 'user' | 'assistant', content: string, timestamp: string}>) || [],
-      currentStep: insertConversation.currentStep || 0,
-      progressPercentage: insertConversation.progressPercentage || 0,
+      ...insertConversation,
       selectedShlokId: insertConversation.selectedShlokId || null,
-      createdAt: insertConversation.createdAt,
     };
     
     this.conversations.set(conversation.sessionId, conversation);
@@ -157,10 +153,9 @@ async function initializeStorage() {
   try {
     const dbStorage = new DatabaseStorage();
     await dbStorage.initializeDatabase();
-    // TODO: Update DatabaseStorage to implement new interface
-    storage = new MemStorage(); // Temporary fallback until DB connection is fixed
-    console.log("✓ Database connection attempted, using memory storage with sample data");
-  } catch (error: any) {
+    storage = dbStorage;
+    console.log("✓ Using database storage");
+  } catch (error) {
     console.error("Database storage failed, falling back to memory storage:", error.message);
     storage = new MemStorage();
     console.log("✓ Using memory storage with sample data");

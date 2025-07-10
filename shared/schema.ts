@@ -9,34 +9,37 @@ export const chapters = pgTable("chapters", {
   description: text("description"),
 });
 
-export const shlokas = pgTable("shlokas", {
+// Using existing shloks table structure
+export const shloks = pgTable("shloks", {
   id: serial("id").primaryKey(),
-  chapterId: integer("chapter_id").references(() => chapters.id).notNull(),
-  verseNumber: integer("verse_number").notNull(),
-  sanskrit: text("sanskrit").notNull(),
-  transliteration: text("transliteration").notNull(),
-  translation: text("translation").notNull(),
-  purport: text("purport"),
-  wordMeanings: jsonb("word_meanings").$type<Array<{sanskrit: string, english: string}>>(),
+  chapterNumber: integer("chapter_number"),
+  verse: integer("verse"),
+  sanskrit: text("sanskrit"),
+  translation: text("translation"),
+  explanation: text("explanation"),
+  tags: text("tags"),
+  chapter: text("chapter"),
+  wordMeaning: text("word_meaning"),
+  createdAt: text("created_at"),
 });
 
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
   sessionId: text("session_id").notNull(),
-  messages: jsonb("messages").$type<Array<{role: 'user' | 'assistant', content: string, timestamp: string}>>().notNull().default([]),
+  messages: jsonb("messages").$type<Array<{role: 'user' | 'assistant', content: string, timestamp: string}>>().notNull(),
   currentStep: integer("current_step").default(0),
   progressPercentage: integer("progress_percentage").default(0),
-  selectedShlokaId: integer("selected_shloka_id").references(() => shlokas.id),
+  selectedShlokId: integer("selected_shlok_id").references(() => shloks.id),
   createdAt: text("created_at").notNull(),
 });
 
 export const insertChapterSchema = createInsertSchema(chapters);
-export const insertShlokaSchema = createInsertSchema(shlokas);
+export const insertShlokSchema = createInsertSchema(shloks);
 export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true });
 
 export type Chapter = typeof chapters.$inferSelect;
-export type Shloka = typeof shlokas.$inferSelect;
+export type Shlok = typeof shloks.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertChapter = z.infer<typeof insertChapterSchema>;
-export type InsertShloka = z.infer<typeof insertShlokaSchema>;
+export type InsertShlok = z.infer<typeof insertShlokSchema>;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;

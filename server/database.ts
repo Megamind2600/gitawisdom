@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { chapters, shlokas, conversations } from "@shared/schema";
-import type { Chapter, Shloka, Conversation, InsertConversation } from "@shared/schema";
+import { chapters, shloks, conversations } from "@shared/schema";
+import type { Chapter, Shlok, Conversation, InsertConversation } from "@shared/schema";
 import { eq, ilike, or } from "drizzle-orm";
 
 // Handle URL encoding for special characters in Supabase connection string

@@ -1,4 +1,5 @@
 import { chapters, shlokas, conversations, type Chapter, type Shloka, type Conversation, type InsertConversation } from "@shared/schema";
+import { DatabaseStorage } from "./database";
 
 export interface IStorage {
   // Chapter operations
@@ -169,4 +170,23 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Try to use database storage first, fall back to memory storage if database fails
+let storage: IStorage;
+
+async function initializeStorage() {
+  try {
+    const dbStorage = new DatabaseStorage();
+    await dbStorage.initializeDatabase();
+    storage = dbStorage;
+    console.log('✓ Using database storage');
+  } catch (error) {
+    console.warn('Database storage failed, falling back to memory storage:', error instanceof Error ? error.message : String(error));
+    storage = new MemStorage();
+    console.log('✓ Using memory storage with sample data');
+  }
+}
+
+// Initialize storage on module load
+initializeStorage();
+
+export { storage };

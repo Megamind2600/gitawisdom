@@ -11,6 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = Path("/tmp/gita-data/data")
 OUT = ROOT / "client" / "src" / "data" / "verses.ts"
+# Compact {id, searchText} manifest for the Node-side embedding precompute.
+# Node can't import the .ts module directly, so this mirrors the exact
+# searchText string the `verse()` helper builds at runtime in verses.ts.
+SEARCH_OUT = ROOT / "client" / "src" / "data" / "verses.search.json"
 
 # Canonical chapter titles used by the UI (IAST transliteration).
 CHAPTER_TITLES = {
@@ -261,6 +265,28 @@ def main() -> None:
 
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {len(entries)} verses to {OUT}")
+
+    # Mirror the runtime `verse()` helper's searchText construction exactly
+    # (title + meaning + reflection + themes + keywords, joined with ". ").
+    search_entries = [
+        {
+            "id": e["id"],
+            "searchText": ". ".join(
+                [
+                    e["title"],
+                    e["meaning"],
+                    e["reflection"],
+                    " ".join(e["themes"]),
+                    " ".join(e["keywords"]),
+                ]
+            ),
+        }
+        for e in entries
+    ]
+    SEARCH_OUT.write_text(
+        json.dumps(search_entries, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"Wrote {len(search_entries)} search texts to {SEARCH_OUT}")
 
 
 if __name__ == "__main__":

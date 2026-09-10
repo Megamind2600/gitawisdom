@@ -239,7 +239,7 @@ function App() {
                 rows={4}
               />
               <div className="search-card-bottom">
-                <span className="search-note"><ShieldCheck size={15} /> Nothing is saved or sent to a server.</span>
+                <span className="search-note"><ShieldCheck size={15} /> Your situation is not saved or sent to a server.</span>
                 <button className="primary-button" type="submit" disabled={isSearching && !query.trim()}>
                   {isSearching ? <LoaderCircle className="spin" size={17} /> : <Search size={17} />}
                   {isSearching ? "Searching…" : "Find my verse"}

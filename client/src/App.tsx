@@ -1,4 +1,4 @@
-import { FormEvent, type ReactNode, useRef, useState } from "react";
+import { FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -8,6 +8,7 @@ import {
   CircleHelp,
   Copy,
   Cpu,
+  Eye,
   Heart,
   Leaf,
   LoaderCircle,
@@ -35,6 +36,28 @@ const EXAMPLE_PROMPTS = [
   "I am grieving a loss and looking for something steady to hold on to.",
 ];
 
+const VISITOR_COUNT_KEY = "gita-wisdom-visits";
+
+function readVisitorCount(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = window.localStorage.getItem(VISITOR_COUNT_KEY);
+    const parsed = raw ? Number.parseInt(raw, 10) : 0;
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeVisitorCount(count: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(VISITOR_COUNT_KEY, String(count));
+  } catch {
+    // localStorage may be unavailable (private mode, disabled storage); fail silently.
+  }
+}
+
 type SearchState = {
   results: SearchResult[];
   method: SearchMethod;
@@ -53,8 +76,19 @@ function App() {
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [visitorCount, setVisitorCount] = useState(0);
   const requestNumberRef = useRef(0);
   const resultsRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    // Persistent, local-only visitor counter. Increments once per page load
+    // and is stored only in this browser's localStorage — nothing is sent
+    // to a server, keeping with the app's privacy-first promise.
+    const previous = readVisitorCount();
+    const next = previous + 1;
+    writeVisitorCount(next);
+    setVisitorCount(next);
+  }, []);
 
   const runSearch = async (value: string) => {
     const trimmedValue = value.trim();
@@ -315,7 +349,7 @@ function App() {
                     ))}
                   </div>
                   <p className="related-footnote">
-                    These are the closest passages in this small, hand-curated index — not generated recommendations.
+                    These are the closest passages across the 700 verses — not generated recommendations.
                   </p>
                 </aside>
               </div>
@@ -371,7 +405,7 @@ function App() {
               </p>
               <div className="about-details">
                 <div><LockKeyhole size={17} /><span><strong>Private</strong> Your situation stays in this browser.</span></div>
-                <div><BookOpen size={17} /><span><strong>Grounded</strong> A curated index of 40+ traditional verses.</span></div>
+                <div><BookOpen size={17} /><span><strong>Grounded</strong> All 700 traditional verses of the Bhagavad Gita.</span></div>
                 <div><Cpu size={17} /><span><strong>Deterministic</strong> No AI-generated response or advice.</span></div>
               </div>
             </div>
@@ -388,7 +422,13 @@ function App() {
         <div className="content-width footer-inner">
           <div className="footer-brand"><span className="brand-mark"><Leaf size={16} /></span><span><strong>Gita</strong> Wisdom</span></div>
           <p>Made for a moment of reflection. <span>ॐ</span></p>
-          <a href="#top">Back to top <ArrowDown size={14} /></a>
+          <div className="footer-meta">
+            <span className="visitor-counter" title="Your visits, stored only in this browser">
+              <Eye size={13} />
+              <span>{visitorCount === 1 ? "Your first visit" : `${visitorCount.toLocaleString()} visits here`}</span>
+            </span>
+            <a href="#top">Back to top <ArrowDown size={14} /></a>
+          </div>
         </div>
       </footer>
     </div>

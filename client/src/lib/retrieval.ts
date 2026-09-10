@@ -2,7 +2,7 @@ import { VERSES, type GitaVerse } from "../data/verses";
 
 export const MODEL_ID = "Xenova/bge-small-en-v1.5";
 const QUERY_PREFIX = "Represent this sentence for searching relevant passages: ";
-const CACHE_KEY = "gita-wisdom:bge-small-en-v1.5:verse-index:v1";
+const CACHE_KEY = "gita-wisdom:bge-small-en-v1.5:verse-index:v2";
 
 export type SearchMethod = "semantic" | "keyword";
 

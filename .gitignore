@@ -2,3 +2,9 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Transformers.js filesystem cache used by scripts/precompute-embeddings.mjs.
+.hf-cache
+
+# Intermediate manifest emitted by build-verses.py for the Node precompute step.
+client/src/data/verses.search.json

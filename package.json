@@ -6,7 +6,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "prebuild": "python3 scripts/build-verses.py && node scripts/precompute-embeddings.mjs",
     "build": "vite build",
+    "build:data": "python3 scripts/build-verses.py && node scripts/precompute-embeddings.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "check": "tsc --noEmit"
   },
@@ -17,6 +19,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@coree-ai/coree-model-bge-small-en-v1.5": "^1.0.2",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",

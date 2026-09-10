@@ -20,6 +20,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Fetch Gita source data
+        run: |
+          mkdir -p /tmp/gita-data/data
+          curl -sSL --retry 3 https://codeload.github.com/gita/gita/tar.gz/refs/heads/main -o /tmp/gita.tar.gz
+          tar -xzf /tmp/gita.tar.gz -C /tmp/gita-data/data --strip-components=2 \
+            gita-main/data/verse.json gita-main/data/translation.json
+          ls -la /tmp/gita-data/data
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

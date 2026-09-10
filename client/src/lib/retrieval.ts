@@ -2,7 +2,9 @@ import { VERSES, type GitaVerse } from "../data/verses";
 
 export const MODEL_ID = "Xenova/bge-small-en-v1.5";
 const QUERY_PREFIX = "Represent this sentence for searching relevant passages: ";
-const CACHE_KEY = "gita-wisdom:bge-small-en-v1.5:verse-index:v2";
+// Precomputed at build time and served as a static asset (no backend). In
+// production Vite's base is /gitawisdom/ (GitHub Pages); in dev it is /.
+const EMBEDDINGS_URL = `${import.meta.env.BASE_URL}embeddings.json`;
 
 export type SearchMethod = "semantic" | "keyword";
 
@@ -21,6 +23,15 @@ export interface SearchResponse {
   results: SearchResult[];
   method: SearchMethod;
   warning?: string;
+}
+
+interface CorpusPayload {
+  model: string;
+  dim: number;
+  count: number;
+  queryPrefix: string;
+  verseIds: string[];
+  vectors: number[][];
 }
 
 type Extractor = (
@@ -186,7 +197,7 @@ async function loadExtractor(
 
       report(onStatus, {
         stage: "loading-model",
-        message: "Local model ready. Preparing the verse index…",
+        message: "Local model ready.",
         progress: 100,
       });
       return extractor as unknown as Extractor;
@@ -200,67 +211,41 @@ async function loadExtractor(
   return extractorPromise;
 }
 
-function readCachedVectors(): number[][] | null {
-  try {
-    const raw = window.localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (
-      Array.isArray(parsed) &&
-      parsed.length === VERSES.length &&
-      parsed.every(
-        (row) =>
-          Array.isArray(row) &&
-          row.length > 0 &&
-          row.every((value) => typeof value === "number"),
-      )
-    ) {
-      return parsed as number[][];
-    }
-  } catch {
-    // Private browsing and full storage are both fine; retrieval still works.
-  }
-  return null;
-}
-
-function writeCachedVectors(vectors: number[][]): void {
-  try {
-    window.localStorage.setItem(CACHE_KEY, JSON.stringify(vectors));
-  } catch {
-    // The index is an optimization, not a requirement.
-  }
-}
-
-async function getCorpusVectors(
-  extractor: Extractor,
+async function loadCorpusVectors(
   onStatus?: StatusCallback,
 ): Promise<number[][]> {
-  const cached = readCachedVectors();
-  if (cached) return cached;
-
   if (!corpusVectorsPromise) {
     corpusVectorsPromise = (async () => {
       report(onStatus, {
-        stage: "indexing",
-        message: `Indexing ${VERSES.length} verses in this browser…`,
-        progress: 0,
+        stage: "loading-model",
+        message: "Loading verse embeddings...",
       });
-      const vectors = await embed(
-        extractor,
-        VERSES.map((item) => item.searchText),
-      );
-      if (vectors.length !== VERSES.length) {
-        throw new Error("The local model could not index every verse.");
+
+      const response = await fetch(EMBEDDINGS_URL);
+      if (!response.ok) {
+        throw new Error(`Could not fetch the verse index (HTTP ${response.status}).`);
       }
-      writeCachedVectors(vectors);
+      const payload = (await response.json()) as CorpusPayload;
+
+      if (payload.count !== VERSES.length || payload.dim !== 384) {
+        throw new Error(
+          "The precomputed verse index does not match this build.",
+        );
+      }
+      if (
+        !Array.isArray(payload.vectors) ||
+        payload.vectors.length !== VERSES.length
+      ) {
+        throw new Error("The precomputed verse index is malformed.");
+      }
+
       report(onStatus, {
-        stage: "indexing",
-        message: "Verse index ready.",
-        progress: 100,
+        stage: "loading-model",
+        message: `Verse embeddings ready (${payload.vectors.length} verses).`,
       });
-      return vectors;
+      return payload.vectors;
     })().catch((error) => {
-      // A failed index should not permanently disable retries for this tab.
+      // A failed fetch should not permanently disable retries for this tab.
       corpusVectorsPromise = null;
       throw error;
     });
@@ -339,8 +324,10 @@ export async function searchVerses(
       stage: "searching",
       message: "Finding the closest passages…",
     });
-    const extractor = await loadExtractor(onStatus);
-    const corpusVectors = await getCorpusVectors(extractor, onStatus);
+    const [extractor, corpusVectors] = await Promise.all([
+      loadExtractor(onStatus),
+      loadCorpusVectors(onStatus),
+    ]);
     const [queryVector] = await embed(extractor, [
       `${QUERY_PREFIX}${trimmedQuery}`,
     ]);
@@ -354,7 +341,7 @@ export async function searchVerses(
 
     report(onStatus, {
       stage: "ready",
-      message: "Matched locally with semantic search.",
+      message: `Matched locally across ${VERSES.length} verses.`,
     });
     return { results, method: "semantic" };
   } catch (error) {
@@ -370,13 +357,4 @@ export async function searchVerses(
         "The model could not load in this browser, so this result uses deterministic keyword matching instead.",
     };
   }
-}
-
-export function clearSearchCache(): void {
-  try {
-    window.localStorage.removeItem(CACHE_KEY);
-  } catch {
-    // Ignore storage restrictions.
-  }
-  corpusVectorsPromise = null;
 }

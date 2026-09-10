@@ -349,7 +349,7 @@ function App() {
                     ))}
                   </div>
                   <p className="related-footnote">
-                    These are the closest passages in this small, hand-curated index — not generated recommendations.
+                    These are the closest passages across the 700 verses — not generated recommendations.
                   </p>
                 </aside>
               </div>
@@ -405,7 +405,7 @@ function App() {
               </p>
               <div className="about-details">
                 <div><LockKeyhole size={17} /><span><strong>Private</strong> Your situation stays in this browser.</span></div>
-                <div><BookOpen size={17} /><span><strong>Grounded</strong> A curated index of 40+ traditional verses.</span></div>
+                <div><BookOpen size={17} /><span><strong>Grounded</strong> All 700 traditional verses of the Bhagavad Gita.</span></div>
                 <div><Cpu size={17} /><span><strong>Deterministic</strong> No AI-generated response or advice.</span></div>
               </div>
             </div>

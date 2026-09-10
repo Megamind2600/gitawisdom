@@ -1308,6 +1308,25 @@ button:disabled {
   transform: rotate(180deg);
 }
 
+.footer-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.visitor-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #b3c7c2;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.visitor-counter svg {
+  color: var(--gold-light);
+}
+
 .footer-inner > a:hover {
   color: #fffaf1;
 }
@@ -1654,6 +1673,11 @@ button:disabled {
     order: 3;
     width: 100%;
     text-align: center;
+  }
+
+  .footer-meta {
+    order: 2;
+    gap: 14px;
   }
 }
 
